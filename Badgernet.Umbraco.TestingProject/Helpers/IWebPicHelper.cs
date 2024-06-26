@@ -14,7 +14,7 @@ namespace Badgernet.WebPicAuto.Helpers
         string GetFullPath(IMedia media);
         object? GetValue(IMedia media, string propName);
         void SetValue(IMedia media, string propName, object value);
-        void ChangeExtention(IMedia media, string extention);
+        void ChangeExtension(IMedia media, string extension);
         void ChangeFilename(IMedia media, string filename);
         Size? ResizeImageFile(string sourcePath, string targetPath, Size sizeLimit, bool ignoreAspectRatio = false);
         bool ConvertImageFile(string sourcePath, string targetPath, string convertMode, int convertQuality);

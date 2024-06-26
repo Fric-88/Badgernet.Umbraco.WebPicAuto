@@ -46,16 +46,16 @@ namespace Badgernet.WebPicAuto.Helpers
             return webRootPath + mediaPath;
         }
 
-        public void ChangeExtention(IMedia media, string extention)
+        public void ChangeExtension(IMedia media, string extension)
         {
             var umbracoFileJson = media.GetValue("umbracoFile");
             if (umbracoFileJson != null)
             {
                 var umbracoFile = JsonNode.Parse((string)umbracoFileJson);
                 var srcProp = umbracoFile!["src"]!.GetValue<string>();
-                umbracoFile["src"] = Path.ChangeExtension(srcProp, extention);
+                umbracoFile["src"] = Path.ChangeExtension(srcProp, extension);
                 media.SetValue("umbracoFile", umbracoFile.ToJsonString());
-                media.SetValue("umbracoExtension", extention);
+                media.SetValue("umbracoExtension", extension);
             }
         }
 
@@ -196,7 +196,7 @@ namespace Badgernet.WebPicAuto.Helpers
             return new Size(newWidth, newHeight);
         }
 
-        //Generates availiable path in the same directory
+        //Generates available path in the same directory
         public string GenerateAlternativePath(IMedia media)
         {
             string originalPath = GetFullPath(media);

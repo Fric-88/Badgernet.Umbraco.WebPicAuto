@@ -162,11 +162,11 @@ namespace Badgernet.WebPicAuto.Handlers
                             var newFilename = Path.GetFileNameWithoutExtension(alternativeFilepath);
 
                             _mediaHelper.ChangeFilename(media, newFilename);
-                            _mediaHelper.ChangeExtention(media, ".webp");
+                            _mediaHelper.ChangeExtension(media, ".webp");
                         }
                         else
                         {
-                            _mediaHelper.ChangeExtention(media, ".webp");
+                            _mediaHelper.ChangeExtension(media, ".webp");
                         }
 
                         //Save new file size
