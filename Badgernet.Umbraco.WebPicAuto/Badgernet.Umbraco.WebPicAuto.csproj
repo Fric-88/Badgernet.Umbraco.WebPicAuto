@@ -14,7 +14,7 @@
     <PackageId>Badgernet.Umbraco.WebPicAuto</PackageId>
     <Product>Badgernet.Umbraco.WebPicAuto</Product>
     <Title>WebPicAuto</Title>
-	<Version>1.1.3</Version>
+	<Version>1.1.4</Version>
     <Description>Image resizer and converter for Umbraco</Description>
     <PackageTags>umbraco plugin package;umbraco-marketplace;webp; </PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>

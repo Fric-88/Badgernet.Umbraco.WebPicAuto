@@ -2,21 +2,12 @@
 using Badgernet.WebPicAuto.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SixLabors.ImageSharp;
-using System.Runtime;
-using System.Text.Json;
-using Umbraco.Cms.Core;
-using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
-using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
-using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Cms.Web.BackOffice.Controllers;
-using Umbraco.Cms.Web.Common;
 using Umbraco.Cms.Web.Common.Authorization;
 
 
@@ -24,32 +15,19 @@ using Umbraco.Cms.Web.Common.Authorization;
 namespace Badgernet.WebPicAuto.Controllers
 {
     [Authorize(Policy = AuthorizationPolicies.SectionAccessSettings)]
-    public class WebPicAutoController : UmbracoAuthorizedJsonController
+    public class WebPicAutoController(
+        IWebPicSettingProvider settingsProvider,
+        ILogger<WebPicAutoController> logger,
+        IMediaHelper mediaHelper,
+        IUmbracoContextAccessor contextAccessor)
+        : UmbracoAuthorizedJsonController
     {
-
-        private readonly IWebPicHelper _mediaHelper;
-        private readonly IWebPicSettingProvider _settingsProvider;
-        private readonly ILogger<WebPicAutoController> _logger;
-        private readonly IUmbracoContextAccessor _contextAccessor;
         private WebPicSettings? _currentSettings;
-
-
-        public WebPicAutoController(IWebPicSettingProvider settingsProvider, 
-                                    ILogger<WebPicAutoController> logger, 
-                                    IUmbracoContextAccessor contextAccessor, 
-                                    IWebPicHelper mediaHelper)
-        {
-            _mediaHelper = mediaHelper;
-            _settingsProvider = settingsProvider;
-            _logger = logger;
-            _contextAccessor = contextAccessor;
-
-        }
 
 
         public ActionResult<WebPicSettings> GetSettings()
         {
-            _currentSettings ??= _settingsProvider.GetFromFile();
+            _currentSettings ??= settingsProvider.GetFromFile();
             _currentSettings ??= new WebPicSettings();//Create default settings
 
             return _currentSettings;
@@ -61,12 +39,12 @@ namespace Badgernet.WebPicAuto.Controllers
 
             try
             {
-                _settingsProvider.PersistToFile(settings);
+                settingsProvider.PersistToFile(settings);
                 return Ok(new { message = "Settings were saved." });
             }
             catch (Exception e)
             {
-                _logger.LogError("Error when saving wpa settings: {0}", e.Message);
+                logger.LogError("Error when saving wpa settings: {0}", e.Message);
                 throw;
             }
         }
@@ -76,11 +54,11 @@ namespace Badgernet.WebPicAuto.Controllers
             var allImages = GetAllImages();
             if (allImages == null)
             {
-                _logger.LogWarning("No existing images found");
+                logger.LogWarning("No existing images found");
                 return NoContent();
             }
 
-            _currentSettings ??= _settingsProvider.GetFromFile();
+            _currentSettings ??= settingsProvider.GetFromFile();
 
             var optimizeCandidates = allImages.Where(img =>
                     (img.Width > _currentSettings.WpaTargetWidth || img.Height > _currentSettings.WpaTargetHeight) ||
@@ -95,9 +73,9 @@ namespace Badgernet.WebPicAuto.Controllers
 
             var result = new
             {
-                toConvertCount = toConvertCount,
-                toResizeCount = toResizeCount,
-                optimizeCandidates = optimizeCandidates
+                toConvertCount,
+                toResizeCount,
+                optimizeCandidates
             };
 
             return Ok(result);
@@ -107,6 +85,7 @@ namespace Badgernet.WebPicAuto.Controllers
         public string ProcessExistingImages(JObject requestJson)
         {
             if (requestJson == null) return "No data recieved";
+            
             if (!requestJson.ContainsKey("ids") || !requestJson.ContainsKey("resize") || !requestJson.ContainsKey("convert")) return "Bad Request";
 
             var imageIds = requestJson.Value<JArray>("ids");
@@ -114,7 +93,7 @@ namespace Badgernet.WebPicAuto.Controllers
             var convert = requestJson.Value<bool>("convert");
 
             //Read current WebPic Settings from file. 
-            var wpaSettings = _settingsProvider.GetFromFile();
+            var wpaSettings = settingsProvider.GetFromFile();
             var targetWidth = wpaSettings.WpaTargetWidth;
             var targetHeight = wpaSettings.WpaTargetHeight;
 
@@ -123,14 +102,14 @@ namespace Badgernet.WebPicAuto.Controllers
             foreach (var idToken in imageIds)
             {
                 var imageId = idToken.Value<int>();
-                var media = _mediaHelper.GetMediaById(imageId);
+                var media = mediaHelper.GetMediaById(imageId);
                 if (media == null)
                 {
-                    _logger.LogError($"Could not find media with id: {imageId}");
+                    logger.LogError($"Could not find media with id: {imageId}");
                     continue;
                 }
 
-                var imagePath = _mediaHelper.GetFullPath(media);
+                var imagePath = mediaHelper.GetRelativePath(media);
 
                 var originalSize = new Size();
                 try
@@ -140,7 +119,7 @@ namespace Badgernet.WebPicAuto.Controllers
                 }
                 catch
                 {
-                    _logger.LogError($"Could not read media size: {imageId}");
+                    logger.LogError($"Could not read media size: {imageId}");
                     continue; //Skip if dimensions cannot be parsed 
                 }
 
@@ -178,12 +157,12 @@ namespace Badgernet.WebPicAuto.Controllers
                             }
                             else
                             {
-                                _logger.LogError($"Failed to resize image with id: {media.Id}");
+                                logger.LogError($"Failed to resize image with id: {media.Id}");
                             }
                         }
                         else
                         {
-                            _logger.LogInformation($"Image with id: {media.Id} does not need resizing.");
+                            logger.LogInformation($"Image with id: {media.Id} does not need resizing.");
                         }
                     }
 
@@ -201,7 +180,7 @@ namespace Badgernet.WebPicAuto.Controllers
                                 wpaSettings.WpaConverterCounter++;
 
                                 _mediaHelper.ChangeFilename(media, newFilename);
-                                _mediaHelper.ChangeExtention(media, ".webp");
+                                _mediaHelper.ChangeExtension(media, ".webp");
 
                                 //Get new file size
                                 FileInfo newImageFile = new(newPath);
@@ -215,21 +194,21 @@ namespace Badgernet.WebPicAuto.Controllers
                             }
                             else
                             {
-                                _logger.LogError($"Error converting media with id: {imageId}");
+                                logger.LogError($"Error converting media with id: {imageId}");
                             }
                         }
                         else
                         {
-                            _logger.LogInformation($"Image with id: {imageId} does not need converting.");
+                            logger.LogInformation($"Image with id: {imageId} does not need converting.");
                         }
                     }
 
-                    _settingsProvider.PersistToFile(wpaSettings);
+                    settingsProvider.PersistToFile(wpaSettings);
                     _mediaHelper.SaveMedia(media);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"There was a problem processing image: {ex.Message}");
+                    logger.LogError($"There was a problem processing image: {ex.Message}");
                     return "Error processing image";
                 }
 
@@ -240,7 +219,7 @@ namespace Badgernet.WebPicAuto.Controllers
 
         private IEnumerable<ImageInfo>? GetAllImages()
         {
-            if (_contextAccessor .TryGetUmbracoContext(out var context) == false)
+            if (contextAccessor .TryGetUmbracoContext(out var context) == false)
                 return null;
       
             if (context.Content == null)
@@ -272,7 +251,7 @@ namespace Badgernet.WebPicAuto.Controllers
                 }
                 catch 
                 {
-                    _logger.LogError($"Could not delete file: {path}");
+                    logger.LogError($"Could not delete file: {path}");
                 }
 
             }

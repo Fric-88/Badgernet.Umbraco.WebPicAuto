@@ -19,7 +19,10 @@ namespace Badgernet.WebPicAuto.Composers
                 var settingsPath = dir + "/App_Plugins/Badgernet.Umbraco.WebPicAuto/Backoffice/WpaSettings.json";
                 return new WebPicSettingsProvider(settingsPath);
             });
-            builder.Services.AddSingleton<IWebPicHelper, WebPicHelper>();
+            
+            builder.Services.AddSingleton<IMediaHelper, MediaHelper>();
+            builder.Services.AddSingleton<IFileManager, FileManager>();
+            builder.Services.AddSingleton<IImageProcessor, ImageProcessor>();
         }
 
 

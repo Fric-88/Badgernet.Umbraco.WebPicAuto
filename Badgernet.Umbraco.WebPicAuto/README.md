@@ -1,15 +1,15 @@
 
 # Badgernet.Umbraco.WebPicAuto
 
-### This package will resize your images when you upload them in Umbraco. </br> It can also convert them to .webp format to save additional storage space.
+### This package will resize your images when you upload them in Umbraco. It can also convert them to .webp format to save additional storage space.
 
-Currently only local files are supported. </br> Umbraco Cloud / Azure Blob Storage support may be added in later releases.
+Currently only local files are supported. Umbraco Cloud / Azure Blob Storage support may be added in later releases.
 
 
 \
 [![NuGet](https://img.shields.io/nuget/dt/Badgernet.Umbraco.WebPicAuto?ImageResizer?label=Downloads&color=green)](https://www.nuget.org/packages/Badgernet.Umbraco.WebPicAuto/)
 
-</br>
+---
 
 # Installation
 Simply add the package by using dotnet add package to install the latest version:
@@ -17,25 +17,24 @@ Simply add the package by using dotnet add package to install the latest version
 dotnet add package Badgernet.Umbraco.WebPicAuto
 ```
 
-</br>
+---
 
 # Uninstallation
 ```
 dotnet remove package Badgernet.Umbraco.WebPicAuto
 ```
-After uninstalling the package, make sure to delete the folder "App_Plugins/Badgernet.Umbraco.WebPicAuto", </br> otherwise the dashboard may still be displayed in the backoffice. 
+After uninstalling the package, make sure to delete the folder "App_Plugins/Badgernet.Umbraco.WebPicAuto", otherwise the dashboard may still be displayed in the backoffice. 
 
-</br>
+---
 
 # Important if using uSync
-This package will also process any images imported using the uSync import feature. </br> Be sure to turn off the converter / resizer (via the dashboard) if you do not want them to be processed.
+This package will also process any images imported using the uSync import feature. Be sure to turn off the converter / resizer (via the dashboard) if you do not want them to be processed.
 
-</br>
+---
 
 # Changelog
 #### Version 1.1.3
 - Adds support for processing existing image files
-
 
 #### Version 1.1.2
 - Fix: Plays nice with uSync
@@ -48,17 +47,16 @@ This package will also process any images imported using the uSync import featur
 #### Version 1.1.0
 - Backoffice dashboard
 
-
 #### Version 1.0.1
 - Added option to downscale images without keeping aspect ratio
 - Provide target dimensions in filename -> "wparesize_800_600_ImageName.png"
 
+---
 
 # Settings
 You can change these default settings by accessing the "Converter/Resizer" dashboard in the Media section in backoffice.
 Settings are stored in a file: "App_Plugins/Badgernet.Umbraco.WebPicAuto/Backoffice/WpaSettings.json"
 
-![image info](https://github.com/frytzl/Badgernet.Umbraco.WebPicAuto/blob/master/Badgernet.Umbraco.WebPicAuto/Dash.png)
 
 ## Resizer enabled
 Turns image resizing on or off
@@ -90,6 +88,7 @@ If turned on, original images will not be deleted (wwwroot/media/***)
 ### Ignore keyword
 Any images containing this keyword in its filename will be ignored by this package. -> "wpaignore_IMG01012024.png" would not get processed.
 
+---
 
 # Credits
 Thanks to everybody at [@Our Umbraco Forum]([https://our.umbraco.com/forum/]) for their helpful tips. \

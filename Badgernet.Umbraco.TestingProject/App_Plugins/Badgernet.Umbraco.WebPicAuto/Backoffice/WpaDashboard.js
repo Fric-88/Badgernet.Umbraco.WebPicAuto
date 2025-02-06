@@ -154,7 +154,7 @@ function WebPicAutoController($scope, $http, umbRequestHelper) {
             umbRequestHelper.resourcePromise($http.post(baseApiUrl + "ProcessExistingImages", { ids: imageIds, resize: $scope.resizeExisting, convert: $scope.convertExisting }))
                 .then(function (responseData) {
                     console.log("Image Processing response: " + responseData);
-                    if (responseData == 'Sucess') {
+                    if (responseData === 'Sucess') {
 
                         //Recheck media
                         $scope.checkMedia();
