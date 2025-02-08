@@ -33,6 +33,9 @@ This package will also process any images imported using the uSync import featur
 ---
 
 # Changelog
+#### Version 1.1.4
+- Changes how images are processed in the background
+
 #### Version 1.1.3
 - Adds support for processing existing image files
 

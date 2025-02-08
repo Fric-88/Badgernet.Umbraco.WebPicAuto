@@ -11,22 +11,20 @@ using Microsoft.Extensions.Logging;
 
 namespace Badgernet.WebPicAuto.Handlers
 {
-    public class WebPicAutoHandler(IWebPicSettingProvider wpaSettingsProvider,
-                                   //IWebPicHelper webPicHelper,
+    public class WebPicAutoHandler(IWebPicSettingProvider settingsProvider,
                                    ICoreScopeProvider scopeProvider,
                                    IMediaHelper mediaHelper,
                                    IFileManager fileManager,
                                    IImageProcessor imageProcessor,
                                    ILogger<WebPicAutoHandler> logger) : INotificationHandler<MediaSavingNotification>
     {
-        private readonly IWebPicSettingProvider _settingsProvider = wpaSettingsProvider;
-        //private readonly IWebPicHelper _mediaHelper = webPicHelper;
-        private readonly ICoreScopeProvider _scopeProvider = scopeProvider;
-        private readonly ILogger<WebPicAutoHandler> _logger = logger;
+
+
+
 
         public void Handle(MediaSavingNotification notification)
         {
-            var wpaSettings = _settingsProvider.GetFromFile();
+            var wpaSettings = settingsProvider.GetFromFile();
             
             bool resizingEnabled = wpaSettings.WpaEnableResizing;
             bool convertingEnabled = wpaSettings.WpaEnableConverting;
@@ -57,7 +55,7 @@ namespace Badgernet.WebPicAuto.Handlers
                 
                 string originalFilepath = mediaHelper.GetRelativePath(media);
                 string alternativeFilepath = fileManager.GetFreePath(originalFilepath);
-                Size originalSize = new();
+                Size originalResolution = new();
 
                 //Skip if paths not good
                 if (string.IsNullOrEmpty(originalFilepath) || string.IsNullOrEmpty(alternativeFilepath)) continue;
@@ -87,14 +85,14 @@ namespace Badgernet.WebPicAuto.Handlers
                     continue;
                 }
                 
-                using var scope = _scopeProvider.CreateCoreScope(autoComplete: true);
+                using var scope = scopeProvider.CreateCoreScope(autoComplete: true);
                 using var _ = scope.Notifications.Suppress();
 
                 //Read resolution      
                 try
                 {
-                    originalSize.Width = int.Parse(media.GetValue<string>("umbracoWidth")!);
-                    originalSize.Height = int.Parse(media.GetValue<string>("umbracoHeight")!);
+                    originalResolution.Width = int.Parse(media.GetValue<string>("umbracoWidth")!);
+                    originalResolution.Height = int.Parse(media.GetValue<string>("umbracoHeight")!);
                 }
                 catch
                 {
@@ -116,28 +114,28 @@ namespace Badgernet.WebPicAuto.Handlers
                 //Skip if image can not be read 
                 if(imageStream == null) 
                 {
-                    _logger.LogError("Could not read file: {originalFilepath}", originalFilepath);
+                    logger.LogError("Could not read file: {originalFilepath}", originalFilepath);
                     continue;
                 }
 
                 //Image resizing part
                 var wasResizedFlag = false;
-                var needsDownsizing = originalSize.Width > targetWidth || originalSize.Height > targetHeight;
+                var needsDownsizing = originalResolution.Width > targetWidth || originalResolution.Height > targetHeight;
                 if(needsDownsizing && resizingEnabled)
                 {
                     var targetSize = new Size(targetWidth, targetHeight);
-                    var newSize = imageProcessor.CalculateResolution(originalSize, targetSize, !ignoreAspectRatio);
+                    var newSize = imageProcessor.CalculateResolution(originalResolution, targetSize, !ignoreAspectRatio);
 
                     using var convertedImageStream = imageProcessor.Resize(imageStream, newSize);
 
                     if(convertedImageStream == null){
-                        _logger.LogError("Could not convert image {originalFilepath}",originalFilepath);
+                        logger.LogError("Could not convert image {originalFilepath}",originalFilepath);
                         imageStream.Dispose();
                         continue;
                     }
 
                     //Calculate file size difference
-                    var bytesSaved = fileManager.CompareFileSize(originalFilepath, alternativeFilepath);
+                    var bytesSaved = imageStream.Length - convertedImageStream.Length;
                     wpaSettings.WpaBytesSavedResizing += bytesSaved;
                     wpaSettings.WpaResizerCounter++;
 
@@ -193,6 +191,10 @@ namespace Badgernet.WebPicAuto.Handlers
                         mediaHelper.SetUmbExtension(media, ".webp");
                         mediaHelper.SetUmbBytes(media, convertedImageStream.Length);
 
+                        // Calculate bytes saved converting images
+                        var bytesSaved = imageStream.Length - convertedImageStream.Length;
+                        wpaSettings.WpaBytesSavedConverting += bytesSaved;
+                        wpaSettings.WpaConverterCounter++;
 
                         //Reassign where to save the image and the image itself
                         finalSavingPath = alternativeFilepath;
@@ -222,7 +224,7 @@ namespace Badgernet.WebPicAuto.Handlers
             }
 
             //Write settings to file to preserve saved bytes values   
-            _settingsProvider.PersistToFile(wpaSettings);
+            settingsProvider.PersistToFile(wpaSettings);
         }
 
         private Size? ParseSizeFromFilename(string fileName)
@@ -259,7 +261,7 @@ namespace Badgernet.WebPicAuto.Handlers
             }
             catch (Exception e)
             {
-                _logger.LogError("WebPicAuto: error: {0}", e.Message);
+                logger.LogError("WebPicAuto: error: {0}", e.Message);
                 return null;
             }
         }

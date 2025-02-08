@@ -2,6 +2,7 @@
 using Badgernet.WebPicAuto.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using SixLabors.ImageSharp;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -19,6 +20,8 @@ namespace Badgernet.WebPicAuto.Controllers
         IWebPicSettingProvider settingsProvider,
         ILogger<WebPicAutoController> logger,
         IMediaHelper mediaHelper,
+        IFileManager fileManager,
+        IImageProcessor imageProcessor,
         IUmbracoContextAccessor contextAccessor)
         : UmbracoAuthorizedJsonController
     {
@@ -49,6 +52,8 @@ namespace Badgernet.WebPicAuto.Controllers
             }
         }
 
+        
+        // Checks media gallery for images that could potentially be optimized
         public ActionResult<dynamic> CheckMedia()
         {
             var allImages = GetAllImages();
@@ -84,9 +89,8 @@ namespace Badgernet.WebPicAuto.Controllers
         [HttpPost]
         public string ProcessExistingImages(JObject requestJson)
         {
-            if (requestJson == null) return "No data recieved";
-            
-            if (!requestJson.ContainsKey("ids") || !requestJson.ContainsKey("resize") || !requestJson.ContainsKey("convert")) return "Bad Request";
+            if (!requestJson.ContainsKey("ids") || !requestJson.ContainsKey("resize") ||
+                !requestJson.ContainsKey("convert")) return "Bad Request";
 
             var imageIds = requestJson.Value<JArray>("ids");
             var resize = requestJson.Value<bool>("resize");
@@ -109,51 +113,56 @@ namespace Badgernet.WebPicAuto.Controllers
                     continue;
                 }
 
-                var imagePath = mediaHelper.GetRelativePath(media);
+                var mediaPath = mediaHelper.GetRelativePath(media);
+                var newMediaPath = fileManager.GetFreePath(mediaPath);
+                var originalResolution = mediaHelper.GetUmbResolution(media);
+                var newResolution = imageProcessor.CalculateResolution(originalResolution,
+                    new Size(targetWidth, targetHeight), !wpaSettings.WpaIgnoreAspectRatio);
+                var newFilename = Path.GetFileName(newMediaPath);
 
-                var originalSize = new Size();
-                try
+                //READ FILE INTO A STREAM THAT NEEDS TO BE MANUALLY DISPOSED
+                var imageStream = fileManager.ReadFile(mediaPath);
+
+                if (imageStream == null)
                 {
-                    originalSize.Width = int.Parse(media.GetValue<string>("umbracoWidth")!);
-                    originalSize.Height = int.Parse(media.GetValue<string>("umbracoHeight")!);
-                }
-                catch
-                {
-                    logger.LogError($"Could not read media size: {imageId}");
-                    continue; //Skip if dimensions cannot be parsed 
+                    logger.LogError("Image with id: {imageId} could not be read.", imageId);
+                    continue;
                 }
 
-                var newPath = _mediaHelper.GenerateAlternativePath(media);
-                var newFilename = Path.GetFileName(newPath);
-
+                //Image will be saved under this path if processing succeeds
+                var finalSavingPath = string.Empty;
 
                 try
                 {
                     if (resize)
                     {
-                        if (originalSize.Width > targetWidth || originalSize.Height > targetHeight)
+                        if (originalResolution.Width > targetWidth || originalResolution.Height > targetHeight)
                         {
-                            var newSize = _mediaHelper.ResizeImageFile(imagePath, newPath, new Size(targetWidth, targetHeight), wpaSettings.WpaIgnoreAspectRatio);
-                            if (newSize != null)
+                            using var resizedImageStream = imageProcessor.Resize(imageStream, newResolution);
+
+                            if (resizedImageStream != null)
                             {
                                 //Save size difference stats
-                                var bytesSaved = _mediaHelper.FileSizeDiff(imagePath, newPath);
+                                var bytesSaved = imageStream.Length - resizedImageStream.Length;
                                 wpaSettings.WpaBytesSavedResizing += bytesSaved;
                                 wpaSettings.WpaResizerCounter++;
 
-                                _mediaHelper.ChangeFilename(media, newFilename);
-
-                                //Get new file size
-                                FileInfo newFile = new(newPath);
-                                media.SetValue("umbracoBytes", newFile.Length);
+                                mediaHelper.SetUmbFilename(media, newFilename);
+                                mediaHelper.SetUmbResolution(media, newResolution);
 
                                 //Delete original image
                                 if (!wpaSettings.WpaKeepOriginals)
                                 {
-                                    DeleteFile(imagePath);
+                                    fileManager.DeleteFile(mediaPath);
                                 }
 
-                                imagePath = newPath;
+                                // Reassign path
+                                mediaPath = newMediaPath;
+
+                                //Copy resized image to image stream
+                                imageStream.ClearAndReassignStream(resizedImageStream);
+
+                                finalSavingPath = mediaPath;
                             }
                             else
                             {
@@ -168,53 +177,85 @@ namespace Badgernet.WebPicAuto.Controllers
 
                     if (convert)
                     {
-                        if (!imagePath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) && !imagePath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+                        if (!mediaPath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) &&
+                            !mediaPath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
                         {
-                            newPath = Path.ChangeExtension(newPath, ".webp");
+                            newMediaPath = Path.ChangeExtension(newMediaPath, ".webp");
 
-                            if (_mediaHelper.ConvertImageFile(imagePath, newPath, wpaSettings.WpaConvertMode, wpaSettings.WpaConvertQuality))
+                            var convertMode = ConvertMode.lossy;
+
+                            if (wpaSettings.WpaConvertMode == "lossless") convertMode = ConvertMode.lossless;
+
+                            using (var convertedImageStream = imageProcessor.ConvertToWebp(imageStream, convertMode,
+                                       wpaSettings.WpaConvertQuality))
                             {
-                                //Calculate file size difference
-                                var bytesSaved = _mediaHelper.FileSizeDiff(imagePath, newPath);
-                                wpaSettings.WpaBytesSavedConverting += bytesSaved;
-                                wpaSettings.WpaConverterCounter++;
-
-                                _mediaHelper.ChangeFilename(media, newFilename);
-                                _mediaHelper.ChangeExtension(media, ".webp");
-
-                                //Get new file size
-                                FileInfo newImageFile = new(newPath);
-                                media.SetValue("umbracoBytes", newImageFile.Length);
-
-                                //Delete original image
-                                if (!wpaSettings.WpaKeepOriginals)
+                                if (convertedImageStream != null)
                                 {
-                                    DeleteFile(imagePath);
+                                    mediaHelper.SetUmbFilename(media, newFilename);
+                                    mediaHelper.SetUmbExtension(media, ".webp");
+                                    mediaHelper.SetUmbBytes(media, convertedImageStream.Length);
+
+                                    if (!wpaSettings.WpaKeepOriginals)
+                                    {
+                                        //Delete original image (before extension change)
+                                        fileManager.DeleteFile(mediaPath);
+                                    }
+
+                                    // Calculate bytes saved converting the image
+                                    var bytesSaved = convertedImageStream.Length - imageStream.Length;
+                                    wpaSettings.WpaBytesSavedConverting += bytesSaved;
+                                    wpaSettings.WpaConverterCounter++;
+
+                                    //Reassign image stream
+                                    imageStream.ClearAndReassignStream(convertedImageStream);
+
+                                    finalSavingPath = newMediaPath;
+
+                                }
+                                else
+                                {
+                                    logger.LogError($"Failed to convert image with id: {media.Id}");
                                 }
                             }
-                            else
-                            {
-                                logger.LogError($"Error converting media with id: {imageId}");
-                            }
-                        }
-                        else
-                        {
-                            logger.LogInformation($"Image with id: {imageId} does not need converting.");
                         }
                     }
+                    
+                    //If finalSavingPath is empty, there was no work done
+                    if (finalSavingPath != string.Empty)
+                    {
+                        var writtenToDisk = false;
+                        try
+                        {
+                            //Write image stream to file system  
+                            fileManager.WriteFile(finalSavingPath, imageStream);
+                            writtenToDisk = true;
+                        }
+                        catch
+                        {
+                            logger.LogError("Image with id: {id} could not be saved to file system.", media.Id);
+                        }
 
-                    settingsProvider.PersistToFile(wpaSettings);
-                    _mediaHelper.SaveMedia(media);
+                        if (writtenToDisk)
+                        {
+                            //Save processed media back to database
+                            mediaHelper.SaveMedia(media);
+                        }
+
+                        settingsProvider.PersistToFile(wpaSettings);
+
+                        //Dispose the stream
+                        imageStream.Dispose();
+
+                    }
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError($"There was a problem processing image: {ex.Message}");
                     return "Error processing image";
                 }
-
+                
             }
 
-            return "Sucess";
+            return "Success";
         }
 
         private IEnumerable<ImageInfo>? GetAllImages()
@@ -258,6 +299,7 @@ namespace Badgernet.WebPicAuto.Controllers
         }
 
     }
+    
 
     public class ImageInfo()
     {

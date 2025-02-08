@@ -1,0 +1,285 @@
+﻿<!--suppress ALL -->
+
+<link rel="stylesheet" href="/App_Plugins/Badgernet.Umbraco.WebPicAuto/Backoffice/WpaDashboard.css">
+
+
+<div class="wpaContainer">
+    <div class="wpaDashboard" ng-controller="Badgernet.Umbraco.WebPicAutoController as vm">
+
+        <div class="wpaPanel">
+            <uui-table class="wpaTable" aria-label="WPA Settings">
+                <uui-table-column style="width: 50%;"></uui-table-column>
+                <uui-table-column style="width: 50%;"></uui-table-column>
+
+                <uui-table-head style="color: white; background-color: #1b264fff">
+                    <uui-table-head-cell>Image processing during upload</uui-table-head-cell>
+                    <uui-table-head-cell>
+                        <uui-button label="Save changes" style="float: right;" class="wpaSaveButton" look="primary" color="positive" ng-click="saveSettings()">Save changes</uui-button>
+                    </uui-table-head-cell>
+                </uui-table-head>
+
+                <uui-table-row>
+                    <uui-table-cell>
+                        <uui-label>Resizer enabled</uui-label>
+                        <uui-label class="wpaMutedText">Enable / Disable image resizing</uui-label>
+                    </uui-table-cell>
+                    <uui-table-cell>
+                        <uui-toggle label="resizer toggler"
+                                    ng-on-change="toggle('WpaEnableResizing')"
+                                    ng-attr-checked="{{vm.settings.WpaEnableResizing ? 'checked' : undefined}}">
+                        </uui-toggle>
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row>
+                    <uui-table-cell>
+                        <uui-label>Max width</uui-label>
+                        <uui-label class="wpaMutedText">Image width in px</uui-label>
+                    </uui-table-cell>
+                    <uui-table-cell>
+                        <uui-input label ="target width"
+                                   type="number"
+                                   min="1" step="1"
+                                   value="{{vm.settings.WpaTargetWidth}}"
+                                   oninput="angular.element(this).scope().setProperty('WpaTargetWidth',this.value)">
+                        </uui-input>
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row>
+                    <uui-table-cell>
+                        <uui-label>Max height</uui-label>
+                        <uui-label class="wpaMutedText">Image height in px</uui-label>
+                    </uui-table-cell>
+                    <uui-table-cell>
+                        <uui-input label ="target height"
+                                   type="number"
+                                   min="1" step="1"
+                                   value="{{vm.settings.WpaTargetHeight}}"
+                                   oninput="angular.element(this).scope().setProperty('WpaTargetHeight',this.value)">
+                        </uui-input>
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row>
+                    <uui-table-cell>
+                        <uui-label>Ignore aspect ratio</uui-label>
+                        <uui-label class="wpaMutedText">If turned on, images may get stretched </uui-label>
+                    </uui-table-cell>
+                    <uui-table-cell>
+                        <uui-toggle label ="ignore aspect ratio"
+                                    ng-on-change="toggle('WpaIgnoreAspectRatio')"
+                                    ng-attr-checked="{{vm.settings.WpaIgnoreAspectRatio ? 'checked' : undefined}}">
+                        </uui-toggle>
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row>
+                    <uui-table-cell class="wpaSplitterCell">
+                    </uui-table-cell>
+                    <uui-table-cell class="wpaSplitterCell">
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row>
+                    <uui-table-cell>
+                        <uui-label>Converter enabled</uui-label>
+                        <uui-label class="wpaMutedText">Enable / Disable image converting</uui-label>
+                    </uui-table-cell>
+                    <uui-table-cell>
+                        <uui-toggle label ="converter toggler"
+                                    ng-on-change="toggle('WpaEnableConverting')"
+                                    ng-attr-checked="{{vm.settings.WpaEnableConverting ? 'checked' : undefined}}">
+                        </uui-toggle>
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row>
+                    <uui-table-cell>
+                        <uui-label>Convert mode</uui-label>
+                        <uui-label class="wpaMutedText">"Lossy" produces smaller image file size</uui-label>
+                        <uui-label class="wpaMutedText">"Lossless" produces better image quality</uui-label>
+                    </uui-table-cell>
+                    <uui-table-cell>
+                        <uui-radio-group name="radioGroup">
+                            <uui-radio style="display: inline-block;"
+                                       value="1"
+                                       onchange="angular.element(this).scope().setProperty('WpaConvertMode','lossy')"
+                                       ng-attr-checked="{{vm.settings.WpaConvertMode == 'lossy' ? 'checked' : undefined}}">Lossy</uui-radio>
+                            <uui-radio style="display: inline-block; margin-left: 2rem"
+                                       value="2"
+                                       onchange="angular.element(this).scope().setProperty('WpaConvertMode','lossless')"
+                                       ng-attr-checked="{{vm.settings.WpaConvertMode == 'lossless' ? 'checked' : undefined}}">Lossless</uui-radio>
+                        </uui-radio-group>
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row>
+                    <uui-table-cell>
+                        <uui-label>Convert quality</uui-label>
+                        <uui-label class="wpaMutedText">Quality in percent (1 to 100)</uui-label>
+                    </uui-table-cell>
+                    <uui-table-cell>
+                        <uui-input label ="convert quality"
+                                   type="number"
+                                   min="1" max="100" step="1"
+                                   value="{{vm.settings.WpaConvertQuality}}"
+                                   onchange="angular.element(this).scope().setProperty('WpaConvertQuality', this.value)">
+                        </uui-input>
+
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row>
+                    <uui-table-cell class="wpaSplitterCell">
+                    </uui-table-cell>
+                    <uui-table-cell class="wpaSplitterCell">
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row>
+                    <uui-table-cell>
+                        <uui-label>Keep original images</uui-label>
+                        <uui-label class="wpaMutedText">If turned on, original images will not get deleted</uui-label>
+                    </uui-table-cell>
+                    <uui-table-cell>
+                        <uui-toggle label ="keep originals"
+                                    ng-on-change="toggle('WpaKeepOriginals')"
+                                    ng-attr-checked="{{vm.settings.WpaKeepOriginals ? 'checked' : undefined}}">
+                        </uui-toggle>
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row>
+                    <uui-table-cell>
+                        <uui-label>Ignore keyword</uui-label>
+                        <uui-label class="wpaMutedText">Images containing this keyword in its name will be ignored</uui-label>
+                    </uui-table-cell>
+                    <uui-table-cell>
+                        <uui-input label ="ignore keyword"
+                                   type="text"
+                                   value="{{vm.settings.WpaIgnoreKeyword}}"
+                                   onchange="angular.element(this).scope().setProperty('WpaIgnoreKeyword', this.value)">
+                        </uui-input>
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row>
+                    <uui-table-cell class="wpaSplitterCell">
+                    </uui-table-cell>
+                    <uui-table-cell class="wpaSplitterCell">
+                    </uui-table-cell>
+                </uui-table-row>
+
+                <uui-table-row style="background-color: #E7E7E7FF">
+                    <uui-table-cell>
+                        <uui-label class="wpaMutedText">Total file size saved by downsizing {{vm.settings.WpaResizerCounter}} images</uui-label>
+                        <uui-label class="wpaMutedText">{{vm.sizeSavedResizing}}</uui-label>
+                    </uui-table-cell>
+                    <uui-table-cell>
+                        <uui-label class="wpaMutedText">Total file size saved by converting {{vm.settings.WpaConverterCounter}} images to .webp format</uui-label>
+                        <uui-label class="wpaMutedText">{{vm.sizeSavedConverting}}</uui-label>
+                    </uui-table-cell>
+                </uui-table-row>
+            </uui-table>
+
+            <uui-table class="wpaTable" style="border-radius: 0 0 4px 4px">
+                <uui-table-column style="width: 100%;"></uui-table-column>
+
+                <uui-table-row style="background-color: #E7E7E7FF">
+                    <uui-table-cell>
+
+                        <div ng-if="vm.mediaCheckResults == undefined">
+                            <uui-label class="wpaCenteredLabel">Check if any existing images can be optimized.</uui-label>
+                            <uui-label class="wpaCenteredLabel wpaMutedText">Click on the "Check Media" button to see what could be done.</uui-label>
+                            <uui-button label ="check media"
+                                        style="display: block; margin-left: auto; margin-right: auto; max-width: 8rem;"
+                                        class="wpaSaveButton" look="primary" color="warning"
+                                        ng-click="checkMedia()">Check Media</uui-button>
+                        </div>
+
+                        <div ng-if="vm.mediaCheckResults != undefined" style="margin-top: 0.5rem;">
+
+                            <div ng-if="vm.mediaCheckResults.optimizeCandidates.length == 0">
+                                <uui-label class="wpaCenteredLabel">Nice, there is nothing more to do.</uui-label>
+                                <uui-label class="wpaCenteredLabel" style="font-size:4em; margin:2rem;">🎉</uui-label>
+                            </div>
+
+                            <div ng-if="vm.mediaCheckResults.optimizeCandidates.length > 0">
+
+                                <uui-label class="wpaCenteredLabel">{{vm.mediaCheckResults.toResizeCount}} images can be downsized.</uui-label>
+                                <uui-label class="wpaCenteredLabel">{{vm.mediaCheckResults.toConvertCount}} images can be converted to .webp format.</uui-label>
+                                <uui-label class="wpaCenteredLabel wpaMutedText">Results are shown based on your current settings.</uui-label>
+
+                                <a id="wpaSelectUnselectImages" class="wpaCenteredLabel" style="margin-top: 1.5rem" href="" ng-click="selectAllImages()">Select all</a>
+
+                                <div class="wpaImgContainer">
+
+                                    <div ng-repeat="img in vm.mediaCheckResults.optimizeCandidates"
+                                         class="wpaSelectableImg"
+                                         width="40"
+                                         height="40"
+                                         style="background: url('{{img.path}}?width=40&height=40')"
+                                         id="{{img.id}}"
+                                         onclick="angular.element(this).scope().selectImage(this)">
+
+                                        <div class="wpaSelectableImgOverlay"></div>
+
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; justify-content:center">
+
+                                    <div style="display:flex; flex-direction:column; justify-content:center">
+                                        <uui-checkbox id="wpaConvertExistting" label="Convert" label-position="left" checked ng-on-change="toggleConvertExisting()"></uui-checkbox>
+                                        <uui-checkbox id="wpaResizeExisting" label="Resize" label-position="left" checked ng-on-change="toggleResizeExisting()"></uui-checkbox>
+                                    </div>
+
+                                    <uui-button label="optimize images"
+                                                style="max-width: 8rem;"
+                                                id="wpaProcessExistingBtn"
+                                                class="wpaSaveButton" look="primary" color="positive"
+                                                popovertarget="wpaProcessConfirm">Optimize</uui-button>
+
+                                </div>
+
+                            </div>
+
+
+
+
+
+                                <a id="wpaSelectUnselectImages" class="wpaCenteredLabel" style="margin-top: 0.5rem" href="" ng-click="checkMedia()">Check images again</a>
+
+                                <uui-popover-container popover="manual" id="wpaProcessConfirm" margin="1" placement="top">
+                                    <div style="background: #1b264fff; color: white; padding: 0.8rem">
+                                        <uui-label class="wpaCenteredLabel">Are you sure?</uui-label>
+                                    </div>
+                                    <uui-label class="wpaCenteredLabel" style="max-width:15rem; margin:1rem;">This will convert and/or resize all selected images.</uui-label>
+
+                                    <div style="display: flex; flex-direction:row-reverse; justify-content:center; margin-bottom: 1rem">
+                                        <uui-button label="yes" class="wpaStackedButton" look="primary" color="positive" ng-click="processExistingImages()" popovertarget="wpaProcessStatus">Yes</uui-button>
+                                        <uui-button label="cancel" class="wpaStackedButton" look="primary" color="danger" ng-click="closePopup('wpaProcessConfirm')">Cancel</uui-button>
+                                    </div>
+                                </uui-popover-container>
+
+                            </div>
+</uui-table-cell>
+                </uui-table-row>
+            </uui-table>
+        </div>
+
+        <div class="wpaPanel">
+            <uui-toast-notification-container auto-close="3000" style=" display: block; align-items:start; position:absolute; left:0px; bottom: 30px; right:30px; height:auto;">
+            </uui-toast-notification-container>
+
+        </div>
+</div>
+
+
+
+
+
+        
+
+

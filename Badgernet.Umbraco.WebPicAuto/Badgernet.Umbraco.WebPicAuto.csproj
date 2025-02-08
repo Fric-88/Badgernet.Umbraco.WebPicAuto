@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -53,5 +53,20 @@
 	<ItemGroup>
 	  <Folder Include="App_Plugins\" />
 	</ItemGroup>
+
+    <ItemGroup>
+        <Content Include="App_Plugins\**\*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+<!--	<ItemGroup>
+	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\Backoffice\Checked.png" />
+	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\Backoffice\WpaDashboard.css" />
+	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\Backoffice\WpaDashboard.html" />
+	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\Backoffice\WpaDashboard.js" />
+	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\Lang\en-US.xml" />
+	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\package.manifest" />
+	</ItemGroup>-->
 
 </Project>
