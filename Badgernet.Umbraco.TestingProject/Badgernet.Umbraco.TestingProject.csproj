@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Badgernet.Umbraco.WebPicAuto" Version="1.1.4" />
     <PackageReference Include="Umbraco.Cms" Version="13.0.0" />
     <PackageReference Include="uSync" Version="13.1.3" />
   </ItemGroup>
@@ -191,10 +192,6 @@
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Badgernet.Umbraco.WebPicAuto\Badgernet.Umbraco.WebPicAuto.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
