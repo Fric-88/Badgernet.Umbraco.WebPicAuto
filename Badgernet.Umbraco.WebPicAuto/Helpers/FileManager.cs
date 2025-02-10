@@ -4,7 +4,7 @@ namespace Badgernet.WebPicAuto.Helpers;
 
 public class FileManager(MediaFileManager mediaFileManager): IFileManager
 {
-        private readonly IFileSystem _fileSystem = mediaFileManager.FileSystem;
+    private readonly IFileSystem _fileSystem = mediaFileManager.FileSystem;
     public bool DeleteFile(string relativePath)
     {
         _fileSystem.DeleteFile(relativePath);

@@ -16,6 +16,7 @@ public class ImageProcessor(ILogger<ImageProcessor> logger) : IImageProcessor
 
             img.Mutate(x =>
             {
+                x.AutoOrient();
                 x.Resize(targetResolution.Width, targetResolution.Height);
             });
 
@@ -61,38 +62,21 @@ public class ImageProcessor(ILogger<ImageProcessor> logger) : IImageProcessor
 
     public Size CalculateResolution(Size originalResolution, Size targetResolution, bool preserveAspectRatio = true)
         {
-            var newWidth = originalResolution.Width;
-            var newHeight = originalResolution.Height;
-
             if (!preserveAspectRatio)
             {
                 return targetResolution;
             }
 
-            var aspectRatio = (double)originalResolution.Width / (double)originalResolution.Height;
+            double aspectRatio = (double)originalResolution.Width / originalResolution.Height;
+            var newWidth = targetResolution.Width;
+            var newHeight = (int)(newWidth / aspectRatio);
 
-            if (aspectRatio > 1)
-            {
-                newWidth = targetResolution.Width;
-                newHeight = (int)(newWidth / aspectRatio);
-                
-                if (newHeight > targetResolution.Height)
-                {
-                    newHeight = targetResolution.Height;
-                    newWidth = (int)(newHeight * aspectRatio);
-                }
-            }
-            else
+            if (newHeight > targetResolution.Height)
             {
                 newHeight = targetResolution.Height;
                 newWidth = (int)(newHeight * aspectRatio);
-
-                if (newWidth > targetResolution.Width)
-                {
-                    newHeight = (int)(newWidth / aspectRatio);
-                    newWidth = targetResolution.Width;
-                }
             }
+
             return new Size(newWidth, newHeight);
         }
 

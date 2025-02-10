@@ -8,13 +8,14 @@
     <AssemblyName>Badgernet.WebPicAuto</AssemblyName>
     <RootNamespace>Badgernet.WebPicAuto</RootNamespace>
     <Authors>Badgernet</Authors>
+    <PackageReleaseNotes>Aspect ratio fix</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup>
     <PackageId>Badgernet.Umbraco.WebPicAuto</PackageId>
     <Product>Badgernet.Umbraco.WebPicAuto</Product>
     <Title>WebPicAuto</Title>
-	<Version>1.1.4</Version>
+	<Version>1.1.5</Version>
     <Description>Image resizer and converter for Umbraco</Description>
     <PackageTags>umbraco plugin package;umbraco-marketplace;webp; </PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -59,14 +60,5 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
-
-<!--	<ItemGroup>
-	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\Backoffice\Checked.png" />
-	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\Backoffice\WpaDashboard.css" />
-	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\Backoffice\WpaDashboard.html" />
-	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\Backoffice\WpaDashboard.js" />
-	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\Lang\en-US.xml" />
-	  <Content Include="App_Plugins\Badgernet.Umbraco.WebPicAuto\package.manifest" />
-	</ItemGroup>-->
-
+    
 </Project>

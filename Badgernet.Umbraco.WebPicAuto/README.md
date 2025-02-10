@@ -3,7 +3,6 @@
 
 ### This package will resize your images when you upload them in Umbraco. It can also convert them to .webp format to save additional storage space.
 
-Currently only local files are supported. Umbraco Cloud / Azure Blob Storage support may be added in later releases.
 
 
 \
@@ -33,6 +32,9 @@ This package will also process any images imported using the uSync import featur
 ---
 
 # Changelog
+#### Version 1.1.5
+- Fix: Corrected aspect ratio calculation
+
 #### Version 1.1.4
 - Changes how images are processed in the background
 
